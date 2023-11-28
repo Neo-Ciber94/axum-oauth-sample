@@ -1,0 +1,6 @@
+/target
+
+# Environment Variables
+.env
+.env.*
+!.env.sample
