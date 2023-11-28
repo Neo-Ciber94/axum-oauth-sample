@@ -1,7 +1,9 @@
 mod routes;
+mod models;
 
-use axum::{routing::get, Router};
+use axum::{routing::get, Extension, Router};
 use dotenv::dotenv;
+use sqlx::sqlite::SqlitePool;
 use std::error::Error;
 use tower_http::trace::TraceLayer;
 use tracing::Level;
@@ -16,6 +18,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_max_level(Level::DEBUG)
         .init();
 
+    let connection_string = std::env::var("DATABASE_URL")?;
+    let pool = SqlitePool::connect(&connection_string).await?;
+
+    let app = Router::new()
+        .layer(Extension(pool))
+        .route("/", get(hello))
+        .merge(auth_router())
+        .layer(TraceLayer::new_for_http());
+
+    let (host, port) = get_host_and_port()?;
+    let listener = tokio::net::TcpListener::bind((host.as_str(), port)).await?;
+    tokio::net::TcpListener::bind((host.as_str(), port)).await?;
+    println!("Listening on: http://{host}:{port}");
+    axum::serve(listener, app).await?;
+
+    Ok(())
+}
+
+fn get_host_and_port() -> Result<(String, u16), Box<dyn Error>> {
     let host = std::env::var("HOST").map_err(|_| format!("PORT not found"))?;
     let port = std::env::var("PORT")
         .map_err(|_| format!("PORT not found"))
@@ -24,16 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Err(_) => Err(format!("Invalid port: {x}")),
         })?;
 
-    let app = Router::new()
-        .route("/", get(hello))
-        .merge(auth_router())
-        .layer(TraceLayer::new_for_http());
-
-    let listener = tokio::net::TcpListener::bind((host.as_str(), port)).await?;
-    println!("Listening on: http://{host}:{port}");
-    axum::serve(listener, app).await?;
-
-    Ok(())
+    Ok((host, port))
 }
 
 async fn hello() -> &'static str {

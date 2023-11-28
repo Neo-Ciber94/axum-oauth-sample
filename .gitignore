@@ -4,3 +4,7 @@
 .env
 .env.*
 !.env.sample
+
+# Misc
+/data/**
+!/data/.gitkeep
