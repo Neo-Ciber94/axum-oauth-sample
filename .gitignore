@@ -1,5 +1,8 @@
 /target
 
+# Node modules
+node_modules
+
 # Environment Variables
 .env
 .env.*

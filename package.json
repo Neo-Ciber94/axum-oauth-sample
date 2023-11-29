@@ -1,0 +1,6 @@
+{
+  "name": "axum-google-auth",
+  "devDependencies": {
+    "tailwindcss": "^3.3.5"
+  }
+}
