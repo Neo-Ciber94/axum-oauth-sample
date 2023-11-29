@@ -2,9 +2,9 @@ use std::{ops::Add, time::Duration};
 
 use axum::{
     extract::Query,
-    http::{header, HeaderMap, StatusCode},
+    http::StatusCode,
     response::{ErrorResponse, IntoResponse, Redirect},
-    routing::{get, post},
+    routing::get,
     Extension, Router,
 };
 
@@ -15,7 +15,10 @@ use oauth2::{reqwest::async_http_client, PkceCodeVerifier};
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use uuid::Uuid;
 
-use crate::models::{User, UserSession};
+use crate::{
+    constants::{COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION},
+    models::User,
+};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use sqlx::SqlitePool;
 
@@ -34,7 +37,7 @@ pub fn google_auth_router() -> Router {
         .route("/google/callback", get(callback))
 }
 
-fn get_client() -> Result<BasicClient, Box<dyn std::error::Error>> {
+fn get_auth_client() -> BasicClient {
     let client_id = ClientId::new(
         std::env::var("GOOGLE_CLIENT_ID")
             .expect("Missing the GOOGLE_CLIENT_ID environment variable."),
@@ -50,18 +53,15 @@ fn get_client() -> Result<BasicClient, Box<dyn std::error::Error>> {
     let token_url = TokenUrl::new("https://www.googleapis.com/oauth2/v3/token".to_string())
         .expect("Invalid token endpoint URL");
 
-    Ok(
-        BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
-            // Set the URL the user will be redirected to after the authorization process.
-            .set_redirect_uri(RedirectUrl::new(
-                "http://localhost:3000/auth/google/callback".to_string(),
-            )?),
-    )
+    let redirect_url = RedirectUrl::new("http://localhost:3000/auth/google/callback".to_string())
+        .expect("Invalid redirect url");
+
+    BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
+        .set_redirect_uri(redirect_url)
 }
 
 async fn login() -> Result<impl IntoResponse, ErrorResponse> {
-    let client =
-        get_client().map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+    let client = get_auth_client();
     let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
 
     let (authorize_url, csrf_state) = client
@@ -74,18 +74,23 @@ async fn login() -> Result<impl IntoResponse, ErrorResponse> {
         .url();
 
     // Set auth cookies
-    let mut csrf_cookie = Cookie::new("auth_csrf_state", csrf_state.secret().to_owned());
-    csrf_cookie.set_http_only(true);
-    csrf_cookie.set_path("/");
-    //csrf_cookie.set_same_site(Some(SameSite::Strict));
-    csrf_cookie.set_max_age(cookie::time::Duration::hours(1));
+    let csrf_cookie: Cookie =
+        Cookie::build((COOKIE_AUTH_CSRF_STATE, csrf_state.secret().to_owned()))
+            .http_only(true)
+            .path("/")
+            .same_site(SameSite::Lax)
+            .max_age(cookie::time::Duration::hours(1))
+            .into();
 
-    let mut code_verifier =
-        Cookie::new("auth_code_verifier", pkce_code_verifier.secret().to_owned());
-    code_verifier.set_http_only(true);
-    code_verifier.set_path("/");
-    //code_verifier.set_same_site(Some(SameSite::Strict));
-    code_verifier.set_max_age(cookie::time::Duration::hours(1));
+    let code_verifier: Cookie = Cookie::build((
+        COOKIE_AUTH_CODE_VERIFIER,
+        pkce_code_verifier.secret().to_owned(),
+    ))
+    .http_only(true)
+    .path("/")
+    .same_site(SameSite::Lax)
+    .max_age(cookie::time::Duration::hours(1))
+    .into();
 
     let cookies = CookieJar::new().add(csrf_cookie).add(code_verifier);
 
@@ -105,26 +110,20 @@ async fn callback(
 ) -> Result<impl IntoResponse, ErrorResponse> {
     let code = query.code;
     let state = query.state;
-    let stored_state = cookies.get("auth_csrf_state");
-    let stored_code_verifier = cookies.get("auth_code_verifier");
+    let stored_state = cookies.get(COOKIE_AUTH_CSRF_STATE);
+    let stored_code_verifier = cookies.get(COOKIE_AUTH_CODE_VERIFIER);
 
     let (Some(csrf_state), Some(code_verifier)) = (stored_state, stored_code_verifier) else {
-        eprintln!("Failed to get auth cookies");
         return Err(ErrorResponse::from(StatusCode::BAD_REQUEST));
     };
 
     if csrf_state.value() != state {
-        eprintln!("Invalid csrf state");
         return Err(ErrorResponse::from(StatusCode::BAD_REQUEST));
     }
 
-    println!("Get google client");
-    let client =
-        get_client().map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+    let client = get_auth_client();
     let code = AuthorizationCode::new(code);
     let pkce_code_verifier = PkceCodeVerifier::new(code_verifier.value().to_owned());
-
-    println!("Get token response");
 
     let token_response = client
         .exchange_code(code)
@@ -133,13 +132,9 @@ async fn callback(
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    println!("Fetch google user");
-
     let google_user = fetch_google_user(token_response.access_token().secret())
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
-
-    println!("Search existing user");
 
     // Add user session
     let account_id = google_user.sub.clone();
@@ -153,8 +148,6 @@ async fn callback(
         .acquire()
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
-
-    println!("Try insert user");
 
     let user_id = match existing_user {
         Some(user) => user.id,
@@ -182,7 +175,6 @@ async fn callback(
     let created_at_ms = created_at.as_millis() as i64;
     let expires_at_ms = expires_at.as_millis() as i64;
 
-    println!("Try session user");
     sqlx::query!(
         "INSERT INTO user_session (id, user_id, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)",
         session_id,
@@ -194,20 +186,22 @@ async fn callback(
     .await
     .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    drop(conn);
-
     // Remove code_verifier and csrf_state cookies
-    let mut remove_csrf_cookie = Cookie::new("auth_csrf_state", "");
-    let mut remove_code_verifier = Cookie::new("auth_code_verifier", "");
+    let mut remove_csrf_cookie = Cookie::new(COOKIE_AUTH_CSRF_STATE, "");
+    let mut remove_code_verifier = Cookie::new(COOKIE_AUTH_CODE_VERIFIER, "");
 
+    remove_csrf_cookie.set_path("/");
     remove_csrf_cookie.make_removal();
+
+    remove_code_verifier.set_path("/");
     remove_code_verifier.make_removal();
 
-    let mut session_cookie = Cookie::new("auth_session", session_id);
-    //session_cookie.set_same_site(Some(SameSite::Strict));
-    session_cookie.set_http_only(true);
-    session_cookie.set_path("/");
-    session_cookie.set_max_age(cookie::time::Duration::hours(24)); // TODO: Is this correct?
+    let session_cookie: Cookie = Cookie::build((COOKIE_AUTH_SESSION, session_id))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .path("/")
+        .max_age(cookie::time::Duration::hours(24)) // TODO: Is this correct?
+        .into();
 
     let cookies = CookieJar::new()
         .add(remove_csrf_cookie)

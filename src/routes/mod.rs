@@ -1,5 +1,5 @@
 use self::auth_google::google_auth_router;
-use crate::models::User;
+use crate::{constants::COOKIE_AUTH_SESSION, models::User};
 use axum::{
     http::StatusCode,
     response::{ErrorResponse, IntoResponse, Redirect},
@@ -22,7 +22,7 @@ pub async fn me(
     cookies: CookieJar,
     Extension(pool): Extension<SqlitePool>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
-    let session_cookie = cookies.get("auth_session");
+    let session_cookie = cookies.get(COOKIE_AUTH_SESSION);
 
     let Some(session_cookie) = session_cookie else {
         return Err(ErrorResponse::from(
@@ -55,7 +55,7 @@ pub async fn logout(
     mut cookies: CookieJar,
     Extension(pool): Extension<SqlitePool>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
-    let session_cookie = cookies.get("auth_session");
+    let session_cookie = cookies.get(COOKIE_AUTH_SESSION);
 
     let Some(session_cookie) = session_cookie else {
         return Err(ErrorResponse::from(
@@ -75,10 +75,10 @@ pub async fn logout(
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    let mut remove_session_cookie = Cookie::new("auth_session", "");
+    let mut remove_session_cookie = Cookie::new(COOKIE_AUTH_SESSION, "");
+    remove_session_cookie.set_path("/");
     remove_session_cookie.make_removal();
-    cookies = cookies
-        .add(remove_session_cookie)
-        .remove(Cookie::from("auth_session"));
+
+    cookies = cookies.add(remove_session_cookie);
     Ok((cookies, Redirect::temporary("/")))
 }
