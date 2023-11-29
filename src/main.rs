@@ -1,9 +1,9 @@
+mod constants;
 mod models;
 mod routes;
-mod constants;
 
 use axum::{routing::get, Extension, Router};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use sqlx::sqlite::SqlitePool;
 use std::error::Error;
 use tower_http::trace::TraceLayer;
