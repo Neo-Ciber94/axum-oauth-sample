@@ -7,9 +7,12 @@
     <link href="/public/favicon.ico" rel="icon" />
     <title>{{title}}</title>
   </head>
-  <body>
-    {% block content %}
-    <p>Placeholder content</p>
-    {% endblock %}
+  <body class="bg-black text-white">
+    <header class=""></header>
+    <main class="p-4 container mx-auto">
+      {% block content %}
+      <p>Placeholder content</p>
+      {% endblock %}
+    </main>
   </body>
 </html>

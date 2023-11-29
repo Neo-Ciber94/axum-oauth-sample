@@ -1,5 +1,8 @@
 {
   "name": "axum-oauth-sample",
+  "scripts": {
+    "tw:watch": "tailwindcss --input ./styles/global.css --output ./public/styles/app.css --watch"
+  },
   "devDependencies": {
     "tailwindcss": "^3.3.5"
   }

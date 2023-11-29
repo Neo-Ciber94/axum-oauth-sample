@@ -3,8 +3,7 @@ mod db;
 mod models;
 mod routes;
 
-use askama::Template;
-use axum::{routing::get, Extension, Router};
+use axum::{Extension, Router};
 use dotenvy::dotenv;
 use sqlx::sqlite::SqlitePool;
 use std::error::Error;
@@ -23,8 +22,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = SqlitePool::connect(&connection_string).await?;
 
     let app = Router::new()
-        .route("/", get(hello))
         .nest("/api", crate::routes::auth_router())
+        .merge(crate::routes::pages_router())
         .merge(public_dir())
         .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
@@ -52,18 +51,4 @@ fn get_host_and_port() -> Result<(String, u16), Box<dyn Error>> {
 
 fn public_dir() -> Router {
     Router::new().nest_service("/public", ServeDir::new("public"))
-}
-
-#[derive(Template)]
-#[template(path = "index.html")]
-struct HelloTemplate<'a> {
-    title: &'a str,
-    name: &'a str,
-}
-
-async fn hello() -> HelloTemplate<'static> {
-    return HelloTemplate {
-        title: "Home Page",
-        name: "Lilly",
-    };
 }
