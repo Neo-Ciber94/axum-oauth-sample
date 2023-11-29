@@ -1,6 +1,7 @@
 mod constants;
 mod models;
 mod routes;
+mod utils;
 
 use axum::{routing::get, Extension, Router};
 use dotenvy::dotenv;

@@ -5,6 +5,7 @@ pub struct User {
     pub username: String,
 }
 
+#[derive(serde::Serialize)]
 pub struct UserSession {
     pub id: String,
     pub user_id: String,

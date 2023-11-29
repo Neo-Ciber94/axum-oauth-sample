@@ -168,7 +168,7 @@ async fn callback(
     };
 
     let session_id = Uuid::new_v4().to_string();
-    let created_at = now();
+    let created_at = crate::utils::now();
     let expires_at = created_at.add(Duration::from_secs(60 * 60 * 24)); // 1 day
 
     // FIXME: Store as u128 instead
@@ -219,10 +219,4 @@ async fn fetch_google_user(access_token: &str) -> Result<GoogleUser, reqwest::Er
         .await?
         .json::<GoogleUser>()
         .await
-}
-
-fn now() -> Duration {
-    use std::time::SystemTime;
-    let now = SystemTime::now();
-    now.elapsed().unwrap()
 }
