@@ -43,7 +43,7 @@ pub async fn me(
     )
     .fetch_optional(&pool)
     .await
-    .unwrap();
+    .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
     match user {
         Some(user) => Ok(Json(user).into_response()),
