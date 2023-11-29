@@ -8,7 +8,7 @@ CREATE TABLE user (
 CREATE TABLE user_session (
     id TEXT PRIMARY KEY NOT NULL,
     user_id TEXT REFERENCES user(id) NOT NULL,
-    expires_at INTEGER NOT NULL,
-    created_at INTEGER NOT NULL,
+    created_at DATETIME NOT NULL,
+    expires_at DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user(id)
 );

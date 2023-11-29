@@ -1,7 +1,6 @@
 mod constants;
 mod models;
 mod routes;
-mod utils;
 
 use axum::{routing::get, Extension, Router};
 use dotenvy::dotenv;
@@ -25,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let app = Router::new()
         .route("/", get(hello))
-        .merge(auth_router())
+        .nest("/api", auth_router())
         .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
 

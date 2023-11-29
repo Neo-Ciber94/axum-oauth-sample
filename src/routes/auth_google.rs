@@ -1,4 +1,4 @@
-use std::{ops::Add, time::Duration};
+use std::time::Duration;
 
 use axum::{
     extract::Query,
@@ -8,6 +8,7 @@ use axum::{
     Extension, Router,
 };
 
+use chrono::{DateTime, Utc};
 use oauth2::{
     basic::BasicClient, AuthorizationCode, CsrfToken, PkceCodeChallenge, Scope, TokenResponse,
 };
@@ -53,7 +54,8 @@ fn get_auth_client() -> BasicClient {
     let token_url = TokenUrl::new("https://www.googleapis.com/oauth2/v3/token".to_string())
         .expect("Invalid token endpoint URL");
 
-    let redirect_url = RedirectUrl::new("http://localhost:3000/auth/google/callback".to_string())
+    let base_url = std::env::var("BASE_URL").expect("Failed to get app base url");
+    let redirect_url = RedirectUrl::new(format!("{base_url}/api/auth/google/callback"))
         .expect("Invalid redirect url");
 
     BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
@@ -66,14 +68,13 @@ async fn login() -> Result<impl IntoResponse, ErrorResponse> {
 
     let (authorize_url, csrf_state) = client
         .authorize_url(CsrfToken::new_random)
-        // This example is requesting access to the "calendar" features and the user's profile.
         .add_scope(Scope::new(
             "https://www.googleapis.com/auth/userinfo.profile".to_string(),
         ))
         .set_pkce_challenge(pkce_code_challenge)
         .url();
 
-    // Set auth cookies
+    // Set csrf and code verifier cookies
     let csrf_cookie: Cookie =
         Cookie::build((COOKIE_AUTH_CSRF_STATE, csrf_state.secret().to_owned()))
             .http_only(true)
@@ -174,20 +175,17 @@ async fn callback(
         }
     };
 
+    let session_duration = Duration::from_millis(1000 * 60 * 60 * 24); // 1 day;
     let session_id = Uuid::new_v4().to_string();
-    let created_at = crate::utils::now();
-    let expires_at = created_at.add(Duration::from_secs(60 * 60 * 24)); // 1 day
-
-    // FIXME: Store as u128 instead
-    let created_at_ms = created_at.as_millis() as i64;
-    let expires_at_ms = expires_at.as_millis() as i64;
+    let created_at = DateTime::<Utc>::default();
+    let expires_at = created_at + session_duration;
 
     sqlx::query!(
         "INSERT INTO user_session (id, user_id, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)",
         session_id,
         user_id,
-        created_at_ms,
-        expires_at_ms
+        created_at,
+        expires_at
     )
     .execute(&mut *conn)
     .await
@@ -206,7 +204,9 @@ async fn callback(
         .same_site(SameSite::Lax)
         .http_only(true)
         .path("/")
-        .max_age(cookie::time::Duration::hours(24)) // TODO: Is this correct?
+        .max_age(cookie::time::Duration::milliseconds(
+            session_duration.as_millis() as i64,
+        ))
         .into();
 
     let cookies = CookieJar::new()
