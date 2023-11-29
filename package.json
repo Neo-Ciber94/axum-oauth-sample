@@ -1,5 +1,5 @@
 {
-  "name": "axum-google-auth",
+  "name": "axum-oauth-sample",
   "devDependencies": {
     "tailwindcss": "^3.3.5"
   }

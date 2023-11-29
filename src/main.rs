@@ -8,10 +8,8 @@ use axum::{routing::get, Extension, Router};
 use dotenvy::dotenv;
 use sqlx::sqlite::SqlitePool;
 use std::error::Error;
-use tower_http::trace::TraceLayer;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::Level;
-
-use crate::routes::auth_router;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -26,7 +24,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let app = Router::new()
         .route("/", get(hello))
-        .nest("/api", auth_router())
+        .nest("/api", crate::routes::auth_router())
+        .merge(public_dir())
         .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
 
@@ -49,6 +48,10 @@ fn get_host_and_port() -> Result<(String, u16), Box<dyn Error>> {
         })?;
 
     Ok((host, port))
+}
+
+fn public_dir() -> Router {
+    Router::new().nest_service("/public", ServeDir::new("public"))
 }
 
 #[derive(Template)]
