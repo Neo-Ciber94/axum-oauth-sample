@@ -1,8 +1,9 @@
 mod constants;
+mod db;
 mod models;
 mod routes;
-mod db;
 
+use askama::Template;
 use axum::{routing::get, Extension, Router};
 use dotenvy::dotenv;
 use sqlx::sqlite::SqlitePool;
@@ -50,6 +51,16 @@ fn get_host_and_port() -> Result<(String, u16), Box<dyn Error>> {
     Ok((host, port))
 }
 
-async fn hello() -> &'static str {
-    return "Hello World!";
+#[derive(Template)]
+#[template(path = "index.html")]
+struct HelloTemplate<'a> {
+    title: &'a str,
+    name: &'a str,
+}
+
+async fn hello() -> HelloTemplate<'static> {
+    return HelloTemplate {
+        title: "Home Page",
+        name: "Lilly",
+    };
 }
