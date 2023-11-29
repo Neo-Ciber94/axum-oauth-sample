@@ -188,11 +188,10 @@ async fn callback(
 
     // Remove code_verifier and csrf_state cookies
     let mut remove_csrf_cookie = Cookie::new(COOKIE_AUTH_CSRF_STATE, "");
-    let mut remove_code_verifier = Cookie::new(COOKIE_AUTH_CODE_VERIFIER, "");
-
     remove_csrf_cookie.set_path("/");
     remove_csrf_cookie.make_removal();
 
+    let mut remove_code_verifier = Cookie::new(COOKIE_AUTH_CODE_VERIFIER, "");
     remove_code_verifier.set_path("/");
     remove_code_verifier.make_removal();
 
