@@ -1,5 +1,5 @@
 use self::auth_google::google_auth_router;
-use crate::{constants::COOKIE_AUTH_SESSION, models::User};
+use crate::constants::COOKIE_AUTH_SESSION;
 use axum::{
     http::StatusCode,
     response::{ErrorResponse, IntoResponse, Redirect},
@@ -30,20 +30,9 @@ pub async fn me(
         ));
     };
 
-    let session_id = session_cookie.value();
-    let user = sqlx::query_as!(
-        User,
-        r#"
-            SELECT user.id as "id: _", account_id, username
-            FROM user
-            LEFT JOIN user_session AS session ON session.user_id = user.id
-            WHERE session.id = ?1
-        "#,
-        session_id
-    )
-    .fetch_optional(&pool)
-    .await
-    .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+    let user = crate::db::get_user_by_session_id(&pool, session_cookie.value())
+        .await
+        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
     match user {
         Some(user) => Ok(Json(user).into_response()),
@@ -63,15 +52,7 @@ pub async fn logout(
         ));
     };
 
-    let session_id = session_cookie.value();
-
-    let mut conn = pool
-        .acquire()
-        .await
-        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
-
-    sqlx::query!("DELETE FROM user_session WHERE id = ?1", session_id)
-        .execute(&mut *conn)
+    crate::db::delete_user_session(&pool, session_cookie.value())
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 

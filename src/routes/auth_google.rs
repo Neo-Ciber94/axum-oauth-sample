@@ -8,18 +8,13 @@ use axum::{
     Extension, Router,
 };
 
-use chrono::{DateTime, Utc};
 use oauth2::{
     basic::BasicClient, AuthorizationCode, CsrfToken, PkceCodeChallenge, Scope, TokenResponse,
 };
 use oauth2::{reqwest::async_http_client, PkceCodeVerifier};
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
-use uuid::Uuid;
 
-use crate::{
-    constants::{COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION},
-    models::User,
-};
+use crate::constants::{COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use sqlx::SqlitePool;
 
@@ -139,57 +134,21 @@ async fn callback(
 
     // Add user session
     let account_id = google_user.sub.clone();
-    let existing_user = sqlx::query_as!(
-        User,
-        r#"
-            SELECT id as "id: uuid::Uuid", account_id, username
-            FROM user 
-            WHERE account_id = ?1
-        "#,
-        account_id
-    )
-    .fetch_optional(&pool)
-    .await
-    .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
-
-    let mut conn = pool
-        .acquire()
+    let existing_user = crate::db::get_user_by_account_id(&pool, account_id.clone())
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    let user_id = match existing_user {
-        Some(user) => user.id,
-        None => {
-            let id = Uuid::new_v4();
-            sqlx::query!(
-                "INSERT INTO user (id, account_id, username) VALUES (?1, ?2, ?3)",
-                id,
-                google_user.sub,
-                google_user.name
-            )
-            .execute(&mut *conn)
+    let user = match existing_user {
+        Some(x) => x,
+        None => crate::db::create_user(&pool, account_id, google_user.name)
             .await
-            .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
-
-            id
-        }
+            .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?,
     };
 
     let session_duration = Duration::from_millis(1000 * 60 * 60 * 24); // 1 day;
-    let session_id = Uuid::new_v4().to_string();
-    let created_at = DateTime::<Utc>::default();
-    let expires_at = created_at + session_duration;
-
-    sqlx::query!(
-        "INSERT INTO user_session (id, user_id, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)",
-        session_id,
-        user_id,
-        created_at,
-        expires_at
-    )
-    .execute(&mut *conn)
-    .await
-    .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+    let user_session = crate::db::create_user_session(&pool, user.id, session_duration)
+        .await
+        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
     // Remove code_verifier and csrf_state cookies
     let mut remove_csrf_cookie = Cookie::new(COOKIE_AUTH_CSRF_STATE, "");
@@ -200,7 +159,7 @@ async fn callback(
     remove_code_verifier.set_path("/");
     remove_code_verifier.make_removal();
 
-    let session_cookie: Cookie = Cookie::build((COOKIE_AUTH_SESSION, session_id))
+    let session_cookie: Cookie = Cookie::build((COOKIE_AUTH_SESSION, user_session.id.to_string()))
         .same_site(SameSite::Lax)
         .http_only(true)
         .path("/")
