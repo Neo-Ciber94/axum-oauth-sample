@@ -138,11 +138,18 @@ async fn callback(
 
     // Add user session
     let account_id = google_user.sub.clone();
-    let existing_user =
-        sqlx::query_as!(User, "SELECT * FROM user WHERE account_id = ?1", account_id)
-            .fetch_optional(&pool)
-            .await
-            .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+    let existing_user = sqlx::query_as!(
+        User,
+        r#"
+            SELECT id as "id: uuid::Uuid", account_id, username
+            FROM user 
+            WHERE account_id = ?1
+        "#,
+        account_id
+    )
+    .fetch_optional(&pool)
+    .await
+    .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
     let mut conn = pool
         .acquire()
@@ -152,7 +159,7 @@ async fn callback(
     let user_id = match existing_user {
         Some(user) => user.id,
         None => {
-            let id = Uuid::new_v4().to_string();
+            let id = Uuid::new_v4();
             sqlx::query!(
                 "INSERT INTO user (id, account_id, username) VALUES (?1, ?2, ?3)",
                 id,

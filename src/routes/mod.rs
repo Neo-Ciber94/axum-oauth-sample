@@ -34,7 +34,7 @@ pub async fn me(
     let user = sqlx::query_as!(
         User,
         r#"
-            SELECT user.*
+            SELECT user.id as "id: _", account_id, username
             FROM user
             LEFT JOIN user_session AS session ON session.user_id = user.id
             WHERE session.id = ?1
