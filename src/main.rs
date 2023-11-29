@@ -1,5 +1,5 @@
-mod routes;
 mod models;
+mod routes;
 
 use axum::{routing::get, Extension, Router};
 use dotenv::dotenv;
@@ -22,9 +22,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = SqlitePool::connect(&connection_string).await?;
 
     let app = Router::new()
-        .layer(Extension(pool))
         .route("/", get(hello))
         .merge(auth_router())
+        .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
 
     let (host, port) = get_host_and_port()?;
