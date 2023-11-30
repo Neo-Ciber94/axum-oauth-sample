@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,12 +7,21 @@
     <link href="/public/favicon.ico" rel="icon" />
     <title>{{title}}</title>
   </head>
-  <body class="bg-black text-white">
-    <header class=""></header>
+  <body class="dark:bg-neutral-900 dark:text-white">
+    <!-- Header -->
+    <header
+      class="bg-black py-4 px-4 h-16 sm:h-20 shadow-sm flex flex-row items-center"
+    >
+      <div class="mx-auto container flex flex-row items-center px-4">
+        <span class="text-white font-mono text-lg sm:text-2xl font-bold">
+          Axum OAuth
+        </span>
+      </div>
+    </header>
+
+    <!-- Content -->
     <main class="p-4 container mx-auto">
-      {% block content %}
-      <p>Placeholder content</p>
-      {% endblock %}
+      {% block content %} {% endblock %}
     </main>
   </body>
 </html>
