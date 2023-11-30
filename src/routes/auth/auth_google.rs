@@ -132,6 +132,7 @@ async fn callback(
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
+    println!("Get/create user");
     // Add user session
     let account_id = google_user.sub.clone();
     let existing_user = crate::db::get_user_by_account_id(&pool, account_id.clone())
@@ -140,9 +141,14 @@ async fn callback(
 
     let user = match existing_user {
         Some(x) => x,
-        None => crate::db::create_user(&pool, account_id, google_user.name)
-            .await
-            .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?,
+        None => crate::db::create_user(
+            &pool,
+            account_id,
+            google_user.name,
+            Some(google_user.picture),
+        )
+        .await
+        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?,
     };
 
     let session_duration = Duration::from_millis(1000 * 60 * 60 * 24); // 1 day;
@@ -173,7 +179,7 @@ async fn callback(
         .add(remove_code_verifier)
         .add(session_cookie);
 
-    let response = (cookies, Redirect::temporary("/auth/me")).into_response();
+    let response = (cookies, Redirect::temporary("/")).into_response();
     Ok(response)
 }
 

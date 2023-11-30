@@ -6,19 +6,30 @@
   <div
     class="p-4 rounded-md shadow-lg border border-gray-300/20 w-[min(400px,100%)] lg:min-w-[600px] space-y-3"
   >
-    <h4 class="font-mono font-bold text-lg">Login</h4>
+    <h4 class="font-mono font-bold text-lg">Welcome</h4>
 
-    <button
-      class="w-full p-4 rounded-lg border border-gray-400/50 hover:bg-black/20 flex flex-row items-center gap-4"
-    >
+    <div class="p-4 flex flex-row items-center gap-2">
+      {% match user.image_url %} 
+    
+      {% when Some with (image_url) %}
       <img
-        alt="Google Logo"
-        src="/public/images/google-logo.png"
-        width="32px"
-        height="32px"
+        alt="{{user.username}}"
+        src="{{image_url}}"
+        width="64px"
+        height="64px"
       />
-      <span>Login with Google</span>
-    </button>
+
+      {% when None %}
+      <img
+        alt="Not found"
+        src="https://placehold.co/64x64?text=Not+Found"
+        width="64px"
+        height="64px"
+      />
+      {% endmatch %}
+
+      <span>Hello {{user.username}}</span>
+    </div>
   </div>
 </div>
 {% endblock %}
