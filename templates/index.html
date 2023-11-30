@@ -6,29 +6,29 @@
   <div
     class="p-4 rounded-md shadow-lg border border-gray-300/20 w-[min(400px,100%)] lg:min-w-[600px] space-y-3"
   >
-    <h4 class="font-mono font-bold text-lg">Welcome</h4>
+    <h4 class="font-mono font-bold text-xl">Welcome!</h4>
 
-    <div class="p-4 flex flex-row items-center gap-2">
-      {% match user.image_url %} 
-    
-      {% when Some with (image_url) %}
+    <div class="flex flex-row gap-2">
+      {% match user.image_url %} {% when Some with (image_url) %}
       <img
         alt="{{user.username}}"
         src="{{image_url}}"
-        width="64px"
-        height="64px"
+        width="`128px"
+        height="`128px"
+        class="rounded-lg shadow-lg"
       />
 
       {% when None %}
       <img
         alt="Not found"
-        src="https://placehold.co/64x64?text=Not+Found"
-        width="64px"
-        height="64px"
+        src="https://placehold.co/128x128?text=Not+Found"
+        width="`128px"
+        height="`128px"
+        class="rounded-lg shadow-lg"
       />
       {% endmatch %}
 
-      <span>Hello {{user.username}}</span>
+      <span class="text-xl">Hello {{user.username}}</span>
     </div>
   </div>
 </div>
