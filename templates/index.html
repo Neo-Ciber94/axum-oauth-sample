@@ -16,14 +16,14 @@
         <img
           alt="{{user.username}}"
           src="{{image_url}}"
-          class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px]"
+          class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px] hover:scale-95 transition-all duration-300"
         />
 
         {% when None %}
         <img
           alt="Not found"
           src="https://placehold.co/128x128?text=Not+Found"
-          class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px]"
+          class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px] hover:scale-95 transition-all duration-300"
         />
         {% endmatch %}
 
@@ -33,7 +33,7 @@
       </div>
 
       <a
-        class="w-full rounded-lg p-2 text-white dark:hover:bg-black/30 text-lg block text-center border border-gray-300/20 cursor-pointer"
+        class="w-full rounded-lg p-2 bg-black hover:bg-neutral-700 text-white dark:hover:bg-black/30 text-lg block text-center border border-gray-300/20 cursor-pointer"
         href="/api/auth/logout"
       >
         Logout
