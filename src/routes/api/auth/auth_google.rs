@@ -90,7 +90,7 @@ async fn login() -> Result<impl IntoResponse, ErrorResponse> {
 
     let cookies = CookieJar::new().add(csrf_cookie).add(code_verifier);
 
-    Ok((cookies, Redirect::temporary(authorize_url.as_str())))
+    Ok((cookies, Redirect::to(authorize_url.as_str())))
 }
 
 #[derive(serde::Deserialize)]
@@ -179,7 +179,7 @@ async fn callback(
         .add(remove_code_verifier)
         .add(session_cookie);
 
-    let response = (cookies, Redirect::temporary("/")).into_response();
+    let response = (cookies, Redirect::to("/")).into_response();
     Ok(response)
 }
 

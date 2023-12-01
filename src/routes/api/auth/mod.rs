@@ -61,5 +61,5 @@ pub async fn logout(
     remove_session_cookie.make_removal();
 
     cookies = cookies.add(remove_session_cookie);
-    Ok((cookies, Redirect::temporary("/")))
+    Ok((cookies, Redirect::to("/")))
 }

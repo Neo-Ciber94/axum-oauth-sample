@@ -30,7 +30,7 @@ async fn home(
             theme,
             user: Some(user),
         }),
-        _ => Err(Redirect::temporary("/login")),
+        _ => Err(Redirect::to("/login")),
     }
 }
 
@@ -48,7 +48,7 @@ async fn login(
     let theme = theme.unwrap_or_default();
 
     match user {
-        Some(_) => Err(Redirect::temporary("/")),
+        Some(_) => Err(Redirect::to("/")),
         None => Ok(LoginTemplate { theme, user: None }),
     }
 }
