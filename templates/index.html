@@ -11,8 +11,12 @@
     <div
       class="p-4 rounded-md shadow-lg border border-gray-300/20 w-full space-y-4"
     >
+      <!-- User must be always defined here -->
+      {% match user %}
+      {% when Some (user) %}
       <div class="flex flex-row gap-4 items-center">
-        {% match user.image_url %} {% when Some with (image_url) %}
+        {% match user.image_url %} 
+        {% when Some with (image_url) %}
         <img
           alt="{{user.username}}"
           src="{{image_url}}"
@@ -31,6 +35,8 @@
           >Hello {{user.username}}</span
         >
       </div>
+      {% when None %}
+      {% endmatch %}
 
       <a
         class="w-full rounded-lg p-2 bg-black hover:bg-neutral-700 text-white dark:hover:bg-black/30 text-lg block text-center border border-gray-300/20 cursor-pointer"

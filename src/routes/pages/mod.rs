@@ -16,7 +16,7 @@ pub fn pages_router() -> Router {
 #[template(path = "index.html")]
 struct HomeTemplate {
     theme: Theme,
-    user: User,
+    user: Option<User>,
 }
 
 async fn home(
@@ -26,7 +26,10 @@ async fn home(
     let theme = theme.unwrap_or_default();
 
     match user {
-        Some(CurrentUser(user)) => Ok(HomeTemplate { theme, user }),
+        Some(CurrentUser(user)) => Ok(HomeTemplate {
+            theme,
+            user: Some(user),
+        }),
         _ => Err(Redirect::temporary("/login")),
     }
 }
@@ -35,6 +38,7 @@ async fn home(
 #[template(path = "login.html")]
 struct LoginTemplate {
     theme: Theme,
+    user: Option<User>,
 }
 
 async fn login(
@@ -45,6 +49,6 @@ async fn login(
 
     match user {
         Some(_) => Err(Redirect::temporary("/")),
-        None => Ok(LoginTemplate { theme }),
+        None => Ok(LoginTemplate { theme, user: None }),
     }
 }

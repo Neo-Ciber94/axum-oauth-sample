@@ -597,6 +597,10 @@ video {
   height: 100%;
 }
 
+.h-10 {
+  height: 2.5rem;
+}
+
 .w-\[64px\] {
   width: 64px;
 }
@@ -615,6 +619,10 @@ video {
 
 .w-\[100px\] {
   width: 100px;
+}
+
+.w-10 {
+  width: 2.5rem;
 }
 
 .min-w-\[100px\] {
@@ -645,6 +653,10 @@ video {
   gap: 1rem;
 }
 
+.gap-2 {
+  gap: 0.5rem;
+}
+
 .space-y-4 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
@@ -657,6 +669,10 @@ video {
 
 .rounded-md {
   border-radius: 0.375rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
 }
 
 .border {
