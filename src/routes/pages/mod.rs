@@ -52,3 +52,10 @@ async fn login(
         None => Ok(LoginTemplate { theme, user: None }),
     }
 }
+
+mod filters {
+    pub fn take<T: std::fmt::Display>(s: T, count: usize) -> ::askama::Result<String> {
+        let s = s.to_string();
+        Ok(s[0..count].to_string())
+    }
+}

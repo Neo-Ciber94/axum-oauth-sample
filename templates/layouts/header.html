@@ -28,7 +28,7 @@
                 {% when Some (image_url) %}
                 <img
                 alt="{{user.username}}"
-                src="https://placehold.co/40x40?text=US"
+                src="{{image_url}}"
                 class="rounded-full w-10 h-10"
                 title="{{user.username}}"
                 />
@@ -36,7 +36,7 @@
                 {% when None %}
                     <img
                     alt="{{user.username}}"
-                    src="https://placehold.co/40x40?text=US"
+                    src="https://placehold.co/40x40/7700FF/FFFFFF.png?text={{user.username|take(2)|capitalize}}"
                     class="rounded-full w-10 h-10"
                     title="{{user.username}}"
                 />            
