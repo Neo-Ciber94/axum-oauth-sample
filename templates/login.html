@@ -2,24 +2,28 @@
 
 <!-- Content -->
 {% block content %}
-<div class="w-full h-full flex flex-row items-center justify-center mt-20">
-  <div
-    class="p-4 rounded-md shadow-lg border border-gray-300/20 w-[min(400px,100%)] lg:min-w-[600px] space-y-3"
-  >
-    <h4 class="font-mono font-bold text-lg">Login</h4>
+<div class="w-full h-full mt-20">
+  <div class="flex flex-col items-center w-[min(600px,100%)] gap-4 mx-auto">
+    <div class="w-full">
+      <h4 class="font-mono font-bold text-3xl">Login</h4>
+    </div>
 
-    <a
-      class="w-full p-4 rounded-lg border border-gray-400/50 hover:bg-black/20 flex flex-row items-center gap-4"
-      href="/api/auth/google/login"
+    <div
+      class="p-4 rounded-md shadow-lg border border-gray-300/20 w-full space-y-4"
     >
-      <img
-        alt="Google Logo"
-        src="/public/images/google-logo.png"
-        width="32px"
-        height="32px"
-      />
-      <span>Login with Google</span>
-    </a>
+      <a
+        class="w-full p-2 rounded-lg border border-gray-300/20 hover:bg-black/20 flex flex-row items-center gap-4"
+        href="/api/auth/google/login"
+      >
+        <img
+          alt="Google Logo"
+          src="/public/images/google-logo.png"
+          width="32px"
+          height="32px"
+        />
+        <span>Login with Google</span>
+      </a>
+    </div>
   </div>
 </div>
 {% endblock %}
