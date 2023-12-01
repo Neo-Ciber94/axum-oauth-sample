@@ -10,6 +10,7 @@ pub fn pages_router() -> Router {
     Router::new()
         .route("/", get(home))
         .route("/login", get(login))
+        .fallback(not_found)
 }
 
 #[derive(Template)]
@@ -51,6 +52,18 @@ async fn login(
         Some(_) => Err(Redirect::to("/")),
         None => Ok(LoginTemplate { theme, user: None }),
     }
+}
+
+#[derive(Template)]
+#[template(path = "404.html")]
+struct NotFoundTemplate {
+    theme: Theme,
+    user: Option<User>,
+}
+
+async fn not_found(UserTheme(theme): UserTheme) -> NotFoundTemplate {
+    let theme = theme.unwrap_or_default();
+    NotFoundTemplate { theme, user: None }
 }
 
 mod filters {
