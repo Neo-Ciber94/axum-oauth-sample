@@ -6,5 +6,6 @@
     },
     "editor.quickSuggestions": {
         "strings": true
-    }
+    },
+    "rust-analyzer.showUnlinkedFileNotification": false
 }

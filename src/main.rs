@@ -3,6 +3,7 @@ mod db;
 mod models;
 mod routes;
 mod server;
+mod misc;
 
 use axum::{Extension, Router};
 use dotenvy::dotenv;
@@ -23,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = SqlitePool::connect(&connection_string).await?;
 
     let app = Router::new()
-        .nest("/api", crate::routes::auth_router())
+        .merge(crate::routes::api_router())
         .merge(crate::routes::pages_router())
         .merge(public_dir())
         .layer(Extension(pool))

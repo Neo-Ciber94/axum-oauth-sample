@@ -5,7 +5,8 @@ use axum::{async_trait, Extension};
 use axum_extra::extract::CookieJar;
 use sqlx::SqlitePool;
 
-use crate::constants::COOKIE_AUTH_SESSION;
+use crate::constants::{COOKIE_AUTH_SESSION, COOKIE_THEME};
+use crate::misc::Theme;
 use crate::models::User;
 
 #[derive(Debug)]
@@ -37,6 +38,33 @@ where
         match user {
             Some(x) => Ok(CurrentUser(x)),
             None => Err(StatusCode::UNAUTHORIZED),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct UserTheme(pub Option<Theme>);
+
+#[async_trait]
+impl<S> FromRequestParts<S> for UserTheme
+where
+    S: Send + Sync,
+{
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let cookies = CookieJar::from_request_parts(parts, state)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let Some(theme_cookie) = cookies.get(COOKIE_THEME) else {
+            return Ok(Default::default());
+        };
+
+        match theme_cookie.value() {
+            "dark" => Ok(UserTheme(Some(Theme::Dark))),
+            "light" => Ok(UserTheme(Some(Theme::Light))),
+            _ => Ok(Default::default()),
         }
     }
 }

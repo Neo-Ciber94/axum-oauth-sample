@@ -1,28 +1,15 @@
-use std::fmt::Display;
-
+use crate::{
+    misc::Theme,
+    models::User,
+    server::{CurrentUser, UserTheme},
+};
 use askama::Template;
 use axum::{response::Redirect, routing::get, Router};
-
-use crate::{models::User, server::CurrentUser};
 
 pub fn pages_router() -> Router {
     Router::new()
         .route("/", get(home))
         .route("/login", get(login))
-}
-
-enum Theme {
-    Dark,
-    Light,
-}
-
-impl Display for Theme {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Theme::Dark => write!(f, "dark"),
-            Theme::Light => write!(f, "light"),
-        }
-    }
 }
 
 #[derive(Template)]
@@ -32,12 +19,14 @@ struct HomeTemplate {
     user: User,
 }
 
-async fn home(user: Option<CurrentUser>) -> Result<HomeTemplate, Redirect> {
+async fn home(
+    user: Option<CurrentUser>,
+    UserTheme(theme): UserTheme,
+) -> Result<HomeTemplate, Redirect> {
+    let theme = theme.unwrap_or_default();
+
     match user {
-        Some(CurrentUser(user)) => Ok(HomeTemplate {
-            theme: Theme::Dark,
-            user,
-        }),
+        Some(CurrentUser(user)) => Ok(HomeTemplate { theme, user }),
         _ => Err(Redirect::temporary("/login")),
     }
 }
@@ -48,9 +37,14 @@ struct LoginTemplate {
     theme: Theme,
 }
 
-async fn login(user: Option<CurrentUser>) -> Result<LoginTemplate, Redirect> {
+async fn login(
+    user: Option<CurrentUser>,
+    UserTheme(theme): UserTheme,
+) -> Result<LoginTemplate, Redirect> {
+    let theme = theme.unwrap_or_default();
+
     match user {
         Some(_) => Err(Redirect::temporary("/")),
-        None => Ok(LoginTemplate { theme: Theme::Dark }),
+        None => Ok(LoginTemplate { theme }),
     }
 }

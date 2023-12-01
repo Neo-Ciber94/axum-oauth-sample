@@ -1,5 +1,5 @@
-mod auth;
+mod api;
 mod pages;
 
-pub use auth::auth_router;
+pub use api::api_router;
 pub use pages::pages_router;

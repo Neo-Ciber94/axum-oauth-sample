@@ -12,10 +12,27 @@
     <header
       class="bg-black py-4 px-4 h-16 sm:h-20 shadow-sm flex flex-row items-center"
     >
-      <div class="mx-auto container flex flex-row items-center px-4">
+      <div
+        class="mx-auto container flex flex-row items-center px-4 justify-between"
+      >
         <span class="text-white font-mono text-lg sm:text-2xl font-bold">
           Axum OAuth
         </span>
+
+        <div class="flex flex-row items-center">
+          <form action="/api/toggle_theme" method="post">
+            <button
+              type="submit"
+              class="p-2 hover:bg-white/20 border border-gray-300/20 rounded-lg font-bold font-mono text-white w-[100px] sm:w-[120px] text-xs sm:text-base"
+            >
+              {% match theme %} {% when crate::misc::Theme::Dark %}
+              <span>☀️ Light</span>
+              {% when crate::misc::Theme::Light %}
+              <span>🌙 Dark</span>
+              {% endmatch %}
+            </button>
+          </form>
+        </div>
       </div>
     </header>
 
