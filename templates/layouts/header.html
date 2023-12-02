@@ -1,21 +1,15 @@
-<header
-  class="fixed w-full bg-black py-4 px-4 h-16 sm:h-20 shadow-sm flex flex-row items-center"
->
-  <div
-    class="mx-auto container flex flex-row items-center px-4 justify-between"
-  >
-  <a href="/">
-    <span class="text-white font-mono text-lg sm:text-2xl font-bold">
-      Axum OAuth
-    </span>
-  </a>
+<header class="fixed w-full bg-black py-4 px-4 h-16 sm:h-20 shadow-sm flex flex-row items-center">
+  <div class="mx-auto container flex flex-row items-center px-4 justify-between">
+    <a href="/">
+      <span class="text-white font-mono text-lg sm:text-2xl font-bold">
+        Axum OAuth
+      </span>
+    </a>
 
     <div class="flex flex-row items-center gap-2">
       <form action="/api/toggle_theme" method="post">
-        <button
-          type="submit"
-          class="p-2 hover:bg-white/20 border border-gray-300/20 rounded-lg font-bold font-mono text-white w-[100px] sm:w-[120px] text-xs sm:text-base"
-        >
+        <button type="submit"
+          class="p-2 hover:bg-white/20 border border-gray-300/20 rounded-lg font-bold font-mono text-white w-[100px] sm:w-[120px] text-xs sm:text-base">
           {% match theme %} {% when crate::misc::Theme::Dark %}
           <span>☀️ Light</span>
           {% when crate::misc::Theme::Light %}
@@ -24,26 +18,18 @@
         </button>
       </form>
 
-      {% match user %} 
-        {% when Some (user) %}
-            {% match user.image_url %}
-                {% when Some (image_url) %}
-                <img
-                alt="{{user.username}}"
-                src="{{image_url}}"
-                class="rounded-full w-10 h-10"
-                title="{{user.username}}"
-                />
+      {% match user %}
+      {% when Some (user) %}
+      {% match user.image_url %}
+      {% when Some (image_url) %}
+      <img alt="{{user.username}}" src="{{image_url}}" class="rounded-full w-10 h-10" title="{{user.username}}" />
 
-                {% when None %}
-                    <img
-                    alt="{{user.username}}"
-                    src="https://placehold.co/40x40/7700FF/FFFFFF.png?text={{user.username|take(2)|capitalize}}"
-                    class="rounded-full w-10 h-10"
-                    title="{{user.username}}"
-                />            
-            {% endmatch %}
-        {% when None %} 
+      {% when None %}
+      <img alt="{{user.username}}"
+        src="https://placehold.co/40x40/7700FF/FFFFFF.png?text={{user.username|take(2)|capitalize}}"
+        class="rounded-full w-10 h-10" title="{{user.username}}" />
+      {% endmatch %}
+      {% when None %}
       {% endmatch %}
     </div>
   </div>

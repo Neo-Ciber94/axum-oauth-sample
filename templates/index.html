@@ -2,48 +2,34 @@
 
 <!-- Content -->
 {% block content %}
-<div
-  class="w-full h-full pt-20"
->
+<div class="w-full h-full pt-20">
   <div class="flex flex-col items-center w-[min(600px,100%)] gap-4 mx-auto">
     <div class="w-full">
       <h4 class="font-mono font-bold text-3xl">Welcome!</h4>
     </div>
 
-    <div
-      class="p-4 rounded-md shadow-lg border border-gray-300/20 w-full space-y-4"
-    >
+    <div class="p-4 rounded-md shadow-lg border border-gray-300/20 w-full space-y-4">
       <!-- User must be always defined here -->
-      {% match user %} 
-        {% when Some (user) %}
-        <div class="flex flex-row gap-4 items-center">
-          {% match user.image_url %} 
-          {% when Some with (image_url) %}
-          <img
-            alt="{{user.username}}"
-            src="{{image_url}}"
-            class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px] hover:scale-95 transition-all duration-300"
-          />
+      {% match user %}
+      {% when Some (user) %}
+      <div class="flex flex-row gap-4 items-center">
+        {% match user.image_url %}
+        {% when Some with (image_url) %}
+        <img alt="{{user.username}}" src="{{image_url}}"
+          class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px] hover:scale-95 transition-all duration-300" />
 
-          {% when None %}
-          <img
-            alt="Not found"
-            src="https://placehold.co/128x128?text=Not+Found"
-            class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px] hover:scale-95 transition-all duration-300"
-          />
-          {% endmatch %}
+        {% when None %}
+        <img alt="Not found" src="https://placehold.co/128x128?text=Not+Found"
+          class="rounded-lg shadow-lg border border-gray-400/50 w-[64px] h-[64px] sm:w-[128px] sm:h-[128px] hover:scale-95 transition-all duration-300" />
+        {% endmatch %}
 
-          <span class="text-lg sm:text-xl font-mono"
-            >Hello {{user.username}}</span
-          >
-        </div>
-        {% when None %} 
+        <span class="text-lg sm:text-xl font-mono">Hello {{user.username}}</span>
+      </div>
+      {% when None %}
       {% endmatch %}
 
-      <a
-        class="w-full rounded-lg p-2 bg-black hover:bg-neutral-700 text-white dark:hover:bg-black/30 text-lg block text-center border border-gray-300/20 cursor-pointer"
-        href="/api/auth/logout"
-      >
+      <a class="w-full rounded-lg p-2 bg-black hover:bg-neutral-700 text-white dark:hover:bg-black/30 text-lg block text-center border border-gray-300/20 cursor-pointer"
+        href="/api/auth/logout">
         Logout
       </a>
     </div>
