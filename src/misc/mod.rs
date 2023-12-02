@@ -1,3 +1,4 @@
+use axum::http::StatusCode;
 use std::fmt::Display;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -14,4 +15,10 @@ impl Display for Theme {
             Theme::Light => write!(f, "light"),
         }
     }
+}
+
+#[derive(Debug)]
+pub struct PageError {
+    pub status: StatusCode,
+    pub message: String,
 }
