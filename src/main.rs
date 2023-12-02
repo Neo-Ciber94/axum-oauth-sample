@@ -40,10 +40,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn get_host_and_port() -> Result<(String, u16), Box<dyn Error>> {
-    let host = std::env::var("HOST").map_err(|_| format!("PORT not found"))?;
+    let host = std::env::var("HOST").map_err(|_| "PORT not found".to_owned())?;
     let port = std::env::var("PORT")
-        .map_err(|_| format!("PORT not found"))
-        .and_then(|x| match u16::from_str_radix(&x, 10) {
+        .map_err(|_| "PORT not found".to_owned())
+        .and_then(|x| match x.parse::<u16>() {
             Ok(port) => Ok(port),
             Err(_) => Err(format!("Invalid port: {x}")),
         })?;
