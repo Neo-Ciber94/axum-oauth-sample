@@ -28,20 +28,30 @@ pub async fn get_user_by_session_id(
     session_id: &str,
 ) -> Result<Option<User>, anyhow::Error> {
     let session_id = Uuid::from_str(session_id)?;
-    let user_session = sqlx::query_as!(
+    let user = sqlx::query_as!(
         User,
         r#"
-                SELECT user.id as "id: uuid::Uuid", account_id, username, image_url
-                FROM user
-                LEFT JOIN user_session AS session ON session.user_id = user.id
-                WHERE session.id = ?1
-            "#,
+            SELECT user.id as "id: uuid::Uuid", account_id, username, image_url
+            FROM user
+            LEFT JOIN user_session AS session ON session.user_id = user.id
+            WHERE session.id = ?1
+        "#,
         session_id
     )
     .fetch_optional(pool)
     .await?;
 
-    Ok(user_session)
+    if let Some(user) = &user {
+        let deleted = delete_expired_user_sessions(pool, user.id).await?;
+        if deleted > 0 {
+            tracing::info!(
+                "{deleted:?} expired sessions where deleted for user '{}'",
+                user.id
+            )
+        }
+    }
+
+    Ok(user)
 }
 
 pub async fn create_user(
@@ -124,4 +134,23 @@ pub async fn delete_user_session(
         .await?;
 
     Ok(result.rows_affected() > 0)
+}
+
+pub async fn delete_expired_user_sessions(
+    pool: &SqlitePool,
+    user_id: Uuid,
+) -> Result<usize, anyhow::Error> {
+    let now = chrono::offset::Utc::now();
+    let result = sqlx::query!(
+        r#"
+            DELETE FROM user_session 
+            WHERE user_id = ?1 AND ?2 > expires_at
+        "#,
+        user_id,
+        now
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(result.rows_affected() as usize)
 }
