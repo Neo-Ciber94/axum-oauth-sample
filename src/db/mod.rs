@@ -1,21 +1,24 @@
 use std::{str::FromStr, time::Duration};
 
-use crate::models::{User, UserSession};
+use crate::models::{AuthProvider, User, UserSession};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
 pub async fn get_user_by_account_id(
     pool: &SqlitePool,
+    provider: AuthProvider,
     account_id: String,
 ) -> Result<Option<User>, anyhow::Error> {
+    let provider = provider.to_string();
     let user = sqlx::query_as!(
         User,
         r#"
-            SELECT id as "id: uuid::Uuid", account_id, username, image_url
+            SELECT id as "id: uuid::Uuid", account_id, provider, username, image_url
             FROM user 
-            WHERE account_id = ?1
+            WHERE account_id = ?1 AND provider = ?2
         "#,
-        account_id
+        account_id,
+        provider
     )
     .fetch_optional(pool)
     .await?;
@@ -31,7 +34,7 @@ pub async fn get_user_by_session_id(
     let user = sqlx::query_as!(
         User,
         r#"
-            SELECT user.id as "id: uuid::Uuid", account_id, username, image_url
+            SELECT user.id as "id: uuid::Uuid", account_id, provider, username, image_url
             FROM user
             LEFT JOIN user_session AS session ON session.user_id = user.id
             WHERE session.id = ?1
@@ -57,19 +60,22 @@ pub async fn get_user_by_session_id(
 pub async fn create_user(
     pool: &SqlitePool,
     account_id: String,
+    provider: AuthProvider,
     username: String,
     image_url: Option<String>,
 ) -> Result<User, anyhow::Error> {
     let id = Uuid::new_v4();
+    let provider = provider.to_string();
     let new_user = sqlx::query_as!(
         User,
         r#"
-            INSERT INTO user (id, account_id, username, image_url) 
-            VALUES (?1, ?2, ?3, ?4) 
-            RETURNING id as "id: uuid::Uuid", account_id, username, image_url
+            INSERT INTO user (id, account_id, provider, username, image_url) 
+            VALUES (?1, ?2, ?3, ?4, ?5) 
+            RETURNING id as "id: uuid::Uuid", account_id, provider, username, image_url
         "#,
         id,
         account_id,
+        provider,
         username,
         image_url
     )

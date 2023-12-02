@@ -18,6 +18,7 @@ use crate::{
         COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION, SESSION_DURATION,
     },
     misc::error::AppError,
+    models::AuthProvider,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use sqlx::SqlitePool;
@@ -149,15 +150,17 @@ async fn callback(
 
     // Add user session
     let account_id = google_user.sub.clone();
-    let existing_user = crate::db::get_user_by_account_id(&pool, account_id.clone())
-        .await
-        .context("Failed to get user")?;
+    let existing_user =
+        crate::db::get_user_by_account_id(&pool, AuthProvider::Google, account_id.clone())
+            .await
+            .context("Failed to get user")?;
 
     let user = match existing_user {
         Some(x) => x,
         None => crate::db::create_user(
             &pool,
             account_id,
+            AuthProvider::Google,
             google_user.name,
             Some(google_user.picture),
         )

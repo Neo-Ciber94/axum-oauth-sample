@@ -16,6 +16,7 @@ use crate::{
         COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION, SESSION_DURATION,
     },
     misc::error::AppError,
+    models::AuthProvider,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use sqlx::SqlitePool;
@@ -148,15 +149,22 @@ async fn callback(
         .name
         .or(github_user.email)
         .unwrap_or_else(|| "<unknown>".to_owned());
-    let existing_user = crate::db::get_user_by_account_id(&pool, account_id.clone())
-        .await
-        .context("Failed to get user")?;
+    let existing_user =
+        crate::db::get_user_by_account_id(&pool, AuthProvider::Github, account_id.clone())
+            .await
+            .context("Failed to get user")?;
 
     let user = match existing_user {
         Some(x) => x,
-        None => crate::db::create_user(&pool, account_id, username, Some(github_user.avatar_url))
-            .await
-            .context("Failed to create user")?,
+        None => crate::db::create_user(
+            &pool,
+            account_id,
+            AuthProvider::Github,
+            username,
+            Some(github_user.avatar_url),
+        )
+        .await
+        .context("Failed to create user")?,
     };
 
     let user_session = crate::db::create_user_session(&pool, user.id, SESSION_DURATION)
