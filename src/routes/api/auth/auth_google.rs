@@ -94,8 +94,8 @@ async fn login() -> Result<impl IntoResponse, ErrorResponse> {
     Ok((cookies, Redirect::to(authorize_url.as_str())))
 }
 
-#[derive(serde::Deserialize)]
-struct GoogleCallbackQuery {
+#[derive(Debug, serde::Deserialize)]
+struct AuthRequest {
     code: String,
     state: String,
 }
@@ -103,7 +103,7 @@ struct GoogleCallbackQuery {
 async fn callback(
     cookies: CookieJar,
     Extension(pool): Extension<SqlitePool>,
-    Query(query): Query<GoogleCallbackQuery>,
+    Query(query): Query<AuthRequest>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
     let code = query.code;
     let state = query.state;
@@ -129,7 +129,14 @@ async fn callback(
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    let google_user = fetch_google_user(token_response.access_token().secret())
+    // Get the Google user info
+    let google_user = reqwest::Client::new()
+        .get("https://www.googleapis.com/oauth2/v3/userinfo")
+        .bearer_auth(token_response.access_token().secret())
+        .send()
+        .await
+        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?
+        .json::<GoogleUser>()
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
@@ -180,14 +187,4 @@ async fn callback(
 
     let response = (cookies, Redirect::to("/")).into_response();
     Ok(response)
-}
-
-async fn fetch_google_user(access_token: &str) -> Result<GoogleUser, reqwest::Error> {
-    reqwest::Client::new()
-        .get("https://www.googleapis.com/oauth2/v3/userinfo")
-        .bearer_auth(access_token)
-        .send()
-        .await?
-        .json::<GoogleUser>()
-        .await
 }
