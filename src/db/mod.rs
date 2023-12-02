@@ -88,19 +88,17 @@ pub async fn create_user_session(
     let created_at = chrono::offset::Utc::now();
     let expires_at = created_at + session_duration;
 
-    let inserted = sqlx::query!(
+    sqlx::query!(
         r#"
             INSERT INTO user_session (id, user_id, created_at, expires_at)
             VALUES (?1, ?2, ?3, ?4)
-            RETURNING
-            id as "id: uuid::Uuid"
         "#,
         session_id,
         user_id,
         created_at,
         expires_at
     )
-    .fetch_one(pool)
+    .execute(pool)
     .await?;
 
     let user_session = sqlx::query_as!(
@@ -114,7 +112,7 @@ pub async fn create_user_session(
             FROM user_session
             WHERE id = ?1
         "#,
-        inserted.id
+        session_id
     )
     .fetch_one(pool)
     .await?;

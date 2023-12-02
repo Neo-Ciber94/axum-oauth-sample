@@ -1,3 +1,4 @@
+pub mod error;
 use axum::http::StatusCode;
 use std::fmt::Display;
 

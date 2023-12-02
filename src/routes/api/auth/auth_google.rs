@@ -1,7 +1,8 @@
+use anyhow::Context;
 use axum::{
     extract::Query,
     http::StatusCode,
-    response::{ErrorResponse, IntoResponse, Redirect},
+    response::{IntoResponse, Redirect},
     routing::get,
     Extension, Router,
 };
@@ -12,8 +13,11 @@ use oauth2::{
 use oauth2::{reqwest::async_http_client, PkceCodeVerifier};
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
-use crate::constants::{
-    COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION, SESSION_DURATION,
+use crate::{
+    constants::{
+        COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION, SESSION_DURATION,
+    },
+    misc::error::AppError,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use sqlx::SqlitePool;
@@ -57,7 +61,7 @@ fn get_auth_client() -> BasicClient {
         .set_redirect_uri(redirect_url)
 }
 
-async fn login() -> Result<impl IntoResponse, ErrorResponse> {
+async fn login() -> impl IntoResponse {
     let client = get_auth_client();
     let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
 
@@ -91,7 +95,7 @@ async fn login() -> Result<impl IntoResponse, ErrorResponse> {
 
     let cookies = CookieJar::new().add(csrf_cookie).add(code_verifier);
 
-    Ok((cookies, Redirect::to(authorize_url.as_str())))
+    (cookies, Redirect::to(authorize_url.as_str()))
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -104,18 +108,18 @@ async fn callback(
     cookies: CookieJar,
     Extension(pool): Extension<SqlitePool>,
     Query(query): Query<AuthRequest>,
-) -> Result<impl IntoResponse, ErrorResponse> {
+) -> Result<impl IntoResponse, AppError> {
     let code = query.code;
     let state = query.state;
     let stored_state = cookies.get(COOKIE_AUTH_CSRF_STATE);
     let stored_code_verifier = cookies.get(COOKIE_AUTH_CODE_VERIFIER);
 
     let (Some(csrf_state), Some(code_verifier)) = (stored_state, stored_code_verifier) else {
-        return Err(ErrorResponse::from(StatusCode::BAD_REQUEST));
+        return Ok(StatusCode::BAD_REQUEST.into_response());
     };
 
     if csrf_state.value() != state {
-        return Err(ErrorResponse::from(StatusCode::BAD_REQUEST));
+        return Ok(StatusCode::BAD_REQUEST.into_response());
     }
 
     let client = get_auth_client();
@@ -127,7 +131,7 @@ async fn callback(
         .set_pkce_verifier(pkce_code_verifier)
         .request_async(async_http_client)
         .await
-        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+        .context("Failed to get token response")?;
 
     // Get the Google user info
     let google_user = reqwest::Client::new()
@@ -135,16 +139,16 @@ async fn callback(
         .bearer_auth(token_response.access_token().secret())
         .send()
         .await
-        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?
+        .context("Failed to get user info")?
         .json::<GoogleUser>()
         .await
-        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+        .context("Failed to convert user info to Json")?;
 
     // Add user session
     let account_id = google_user.sub.clone();
     let existing_user = crate::db::get_user_by_account_id(&pool, account_id.clone())
         .await
-        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+        .context("Failed to get user")?;
 
     let user = match existing_user {
         Some(x) => x,
@@ -155,12 +159,12 @@ async fn callback(
             Some(google_user.picture),
         )
         .await
-        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?,
+        .context("Failed to create user")?,
     };
 
     let user_session = crate::db::create_user_session(&pool, user.id, SESSION_DURATION)
         .await
-        .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
+        .context("Failed to create user session")?;
 
     // Remove code_verifier and csrf_state cookies
     let mut remove_csrf_cookie = Cookie::new(COOKIE_AUTH_CSRF_STATE, "");
