@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use axum::{
     extract::Query,
     http::StatusCode,
@@ -14,7 +12,9 @@ use oauth2::{
 use oauth2::{reqwest::async_http_client, PkceCodeVerifier};
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
-use crate::constants::{COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION};
+use crate::constants::{
+    COOKIE_AUTH_CODE_VERIFIER, COOKIE_AUTH_CSRF_STATE, COOKIE_AUTH_SESSION, SESSION_DURATION,
+};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use sqlx::SqlitePool;
 
@@ -69,13 +69,14 @@ async fn login() -> Result<impl IntoResponse, ErrorResponse> {
         .set_pkce_challenge(pkce_code_challenge)
         .url();
 
-    // Set csrf and code verifier cookies
+    // Set csrf and code verifier cookies, these are short lived cookies
+    let cookie_max_age = cookie::time::Duration::minutes(5);
     let csrf_cookie: Cookie =
         Cookie::build((COOKIE_AUTH_CSRF_STATE, csrf_state.secret().to_owned()))
             .http_only(true)
             .path("/")
             .same_site(SameSite::Lax)
-            .max_age(cookie::time::Duration::hours(1))
+            .max_age(cookie_max_age)
             .into();
 
     let code_verifier: Cookie = Cookie::build((
@@ -85,7 +86,7 @@ async fn login() -> Result<impl IntoResponse, ErrorResponse> {
     .http_only(true)
     .path("/")
     .same_site(SameSite::Lax)
-    .max_age(cookie::time::Duration::hours(1))
+    .max_age(cookie_max_age)
     .into();
 
     let cookies = CookieJar::new().add(csrf_cookie).add(code_verifier);
@@ -132,7 +133,6 @@ async fn callback(
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    println!("Get/create user");
     // Add user session
     let account_id = google_user.sub.clone();
     let existing_user = crate::db::get_user_by_account_id(&pool, account_id.clone())
@@ -151,8 +151,7 @@ async fn callback(
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?,
     };
 
-    let session_duration = Duration::from_millis(1000 * 60 * 60 * 24); // 1 day;
-    let user_session = crate::db::create_user_session(&pool, user.id, session_duration)
+    let user_session = crate::db::create_user_session(&pool, user.id, SESSION_DURATION)
         .await
         .map_err(|_| ErrorResponse::from(StatusCode::INTERNAL_SERVER_ERROR))?;
 
@@ -170,7 +169,7 @@ async fn callback(
         .http_only(true)
         .path("/")
         .max_age(cookie::time::Duration::milliseconds(
-            session_duration.as_millis() as i64,
+            SESSION_DURATION.as_millis() as i64,
         ))
         .into();
 

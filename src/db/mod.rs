@@ -7,8 +7,8 @@ use uuid::Uuid;
 pub async fn get_user_by_account_id(
     pool: &SqlitePool,
     account_id: String,
-) -> Result<Option<User>, sqlx::Error> {
-    sqlx::query_as!(
+) -> Result<Option<User>, anyhow::Error> {
+    let user = sqlx::query_as!(
         User,
         r#"
             SELECT id as "id: uuid::Uuid", account_id, username, image_url
@@ -18,16 +18,17 @@ pub async fn get_user_by_account_id(
         account_id
     )
     .fetch_optional(pool)
-    .await
+    .await?;
+
+    Ok(user)
 }
 
 pub async fn get_user_by_session_id(
     pool: &SqlitePool,
     session_id: &str,
-) -> Result<Option<User>, sqlx::Error> {
-    let session_id = Uuid::from_str(session_id).unwrap(); // TODO: Handle error
-
-    sqlx::query_as!(
+) -> Result<Option<User>, anyhow::Error> {
+    let session_id = Uuid::from_str(session_id)?;
+    let user_session = sqlx::query_as!(
         User,
         r#"
                 SELECT user.id as "id: uuid::Uuid", account_id, username, image_url
@@ -38,7 +39,9 @@ pub async fn get_user_by_session_id(
         session_id
     )
     .fetch_optional(pool)
-    .await
+    .await?;
+
+    Ok(user_session)
 }
 
 pub async fn create_user(
@@ -46,10 +49,9 @@ pub async fn create_user(
     account_id: String,
     username: String,
     image_url: Option<String>,
-) -> Result<User, sqlx::Error> {
+) -> Result<User, anyhow::Error> {
     let id = Uuid::new_v4();
-
-    sqlx::query_as!(
+    let new_user = sqlx::query_as!(
         User,
         r#"
             INSERT INTO user (id, account_id, username, image_url) 
@@ -62,19 +64,21 @@ pub async fn create_user(
         image_url
     )
     .fetch_one(pool)
-    .await
+    .await?;
+
+    Ok(new_user)
 }
 
 pub async fn create_user_session(
     pool: &SqlitePool,
     user_id: Uuid,
     session_duration: Duration,
-) -> Result<UserSession, sqlx::Error> {
+) -> Result<UserSession, anyhow::Error> {
     let session_id = Uuid::new_v4();
     let created_at = chrono::offset::Utc::now();
     let expires_at = created_at + session_duration;
 
-    sqlx::query_as!(
+    Ok(sqlx::query_as!(
         UserSession,
         r#"
             INSERT INTO user_session (id, user_id, created_at, expires_at)
@@ -91,11 +95,14 @@ pub async fn create_user_session(
         expires_at
     )
     .fetch_one(pool)
-    .await
+    .await?)
 }
 
-pub async fn delete_user_session(pool: &SqlitePool, session_id: &str) -> Result<bool, sqlx::Error> {
-    let session_id = Uuid::from_str(session_id).unwrap(); // TODO: Handle error
+pub async fn delete_user_session(
+    pool: &SqlitePool,
+    session_id: &str,
+) -> Result<bool, anyhow::Error> {
+    let session_id = Uuid::from_str(session_id)?;
     let mut conn = pool.acquire().await?;
 
     let result = sqlx::query!("DELETE FROM user_session WHERE id = ?1", session_id)

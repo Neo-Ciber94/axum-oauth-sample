@@ -32,11 +32,11 @@ async fn toggle_theme(UserTheme(theme): UserTheme, headers: HeaderMap) -> impl I
     let theme_cookie: Cookie = Cookie::build((COOKIE_THEME, new_theme.to_string()))
         .path("/")
         .into();
-    let cookies = CookieJar::new().add(theme_cookie);
 
+    let cookies = CookieJar::new().add(theme_cookie);
     let referer = headers.get(header::REFERER);
     let path = match referer {
-        Some(referer) => referer.to_str().unwrap(),
+        Some(referer) => referer.to_str().expect("Failed to get referer path"),
         None => "/",
     };
 
