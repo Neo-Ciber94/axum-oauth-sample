@@ -14,12 +14,9 @@ pub fn pages_router() -> Router {
     Router::new()
         .route("/", get(home))
         .route("/login", get(login))
+        .layer(middleware::from_fn(auth_middleware))
+        .layer(middleware::from_fn(handle_error_middleware))
         .fallback(not_found)
-        .route(
-            "/error",
-            get(|| async { StatusCode::UNAUTHORIZED.into_response() }),
-        )
-        .layer(middleware::from_fn(handle_error))
 }
 
 #[derive(Template)]
@@ -29,18 +26,11 @@ struct HomeTemplate {
     user: Option<User>,
 }
 
-async fn home(
-    user: Option<CurrentUser>,
-    UserTheme(theme): UserTheme,
-) -> Result<HomeTemplate, Redirect> {
+async fn home(CurrentUser(user): CurrentUser, UserTheme(theme): UserTheme) -> HomeTemplate {
     let theme = theme.unwrap_or_default();
-
-    match user {
-        Some(CurrentUser(user)) => Ok(HomeTemplate {
-            theme,
-            user: Some(user),
-        }),
-        _ => Err(Redirect::to("/login")),
+    HomeTemplate {
+        theme,
+        user: Some(user),
     }
 }
 
@@ -51,16 +41,9 @@ struct LoginTemplate {
     user: Option<User>,
 }
 
-async fn login(
-    user: Option<CurrentUser>,
-    UserTheme(theme): UserTheme,
-) -> Result<LoginTemplate, Redirect> {
+async fn login(UserTheme(theme): UserTheme) -> LoginTemplate {
     let theme = theme.unwrap_or_default();
-
-    match user {
-        Some(_) => Err(Redirect::to("/")),
-        None => Ok(LoginTemplate { theme, user: None }),
-    }
+    LoginTemplate { theme, user: None }
 }
 
 #[derive(Template)]
@@ -84,7 +67,7 @@ async fn not_found(UserTheme(theme): UserTheme) -> ErrorTemplate {
     }
 }
 
-async fn handle_error(
+async fn handle_error_middleware(
     UserTheme(theme): UserTheme,
     request: Request,
     next: Next,
@@ -108,6 +91,18 @@ async fn handle_error(
     }
 
     response
+}
+
+async fn auth_middleware(
+    user: Option<CurrentUser>,
+    request: Request,
+    next: Next,
+) -> axum::response::Response {
+    match user {
+        None if request.uri().path() != "/login" => Redirect::to("/login").into_response(),
+        Some(_) if request.uri().path() == "/login" => Redirect::to("/").into_response(),
+        _ => next.run(request).await,
+    }
 }
 
 mod filters {
