@@ -31,6 +31,7 @@ async fn toggle_theme(UserTheme(theme): UserTheme, headers: HeaderMap) -> impl I
 
     let theme_cookie: Cookie = Cookie::build((COOKIE_THEME, new_theme.to_string()))
         .path("/")
+        .permanent()
         .into();
 
     let cookies = CookieJar::new().add(theme_cookie);
