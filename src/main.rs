@@ -1,9 +1,9 @@
 mod constants;
 mod db;
+mod misc;
 mod models;
 mod routes;
 mod server;
-mod misc;
 
 use axum::{Extension, Router};
 use dotenvy::dotenv;
