@@ -37,32 +37,34 @@ pub fn google_auth_router() -> Router {
         .route("/google/callback", get(callback))
 }
 
-fn get_oauth_client() -> BasicClient {
+fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
     let client_id = ClientId::new(
         std::env::var("GOOGLE_CLIENT_ID")
-            .expect("Missing the GOOGLE_CLIENT_ID environment variable."),
+            .context("Missing the GOOGLE_CLIENT_ID environment variable")?,
     );
 
     let client_secret = ClientSecret::new(
         std::env::var("GOOGLE_CLIENT_SECRET")
-            .expect("Missing the GOOGLE_CLIENT_SECRET environment variable."),
+            .context("Missing the GOOGLE_CLIENT_SECRET environment variable")?,
     );
 
     let auth_url = AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())
-        .expect("Invalid authorization endpoint URL");
+        .context("Invalid authorization endpoint URL")?;
     let token_url = TokenUrl::new("https://www.googleapis.com/oauth2/v3/token".to_string())
-        .expect("Invalid token endpoint URL");
+        .context("Invalid token endpoint URL")?;
 
-    let base_url = std::env::var("BASE_URL").expect("Failed to get app base url");
+    let base_url = std::env::var("BASE_URL").context("Failed to get app base url")?;
     let redirect_url = RedirectUrl::new(format!("{base_url}/api/auth/google/callback"))
-        .expect("Invalid redirect url");
+        .context("Invalid redirect url")?;
 
-    BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
-        .set_redirect_uri(redirect_url)
+    let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
+        .set_redirect_uri(redirect_url);
+
+    Ok(client)
 }
 
-async fn login() -> impl IntoResponse {
-    let client = get_oauth_client();
+async fn login() -> Result<impl IntoResponse, AppError> {
+    let client = get_oauth_client().context("Failed to create google auth client")?;
     let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
 
     let (authorize_url, csrf_state) = client
@@ -95,7 +97,7 @@ async fn login() -> impl IntoResponse {
 
     let cookies = CookieJar::new().add(csrf_cookie).add(code_verifier);
 
-    (cookies, Redirect::to(authorize_url.as_str()))
+    Ok((cookies, Redirect::to(authorize_url.as_str())))
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -122,7 +124,7 @@ async fn callback(
         return Ok(StatusCode::BAD_REQUEST.into_response());
     }
 
-    let client = get_oauth_client();
+    let client = get_oauth_client().context("Failed to create google auth client")?;
     let code = AuthorizationCode::new(code);
     let pkce_code_verifier = PkceCodeVerifier::new(code_verifier.value().to_owned());
 
