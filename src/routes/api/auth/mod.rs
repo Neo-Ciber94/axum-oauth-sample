@@ -1,4 +1,4 @@
-use self::auth_google::google_auth_router;
+use self::{auth_github::github_auth_router, auth_google::google_auth_router};
 use crate::constants::COOKIE_AUTH_SESSION;
 use axum::{
     http::StatusCode,
@@ -9,11 +9,18 @@ use axum::{
 use axum_extra::extract::cookie::CookieJar;
 use cookie::Cookie;
 use sqlx::SqlitePool;
+
+mod auth_github;
 mod auth_google;
 
 pub fn auth_router() -> Router {
     Router::new()
-        .nest("/auth", google_auth_router())
+        .nest(
+            "/auth",
+            Router::new()
+                .merge(google_auth_router())
+                .merge(github_auth_router()),
+        )
         .route("/auth/me", get(me))
         .route("/auth/logout", get(logout))
 }
