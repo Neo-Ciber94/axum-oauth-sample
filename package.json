@@ -1,7 +1,11 @@
 {
   "name": "axum-oauth-sample",
   "scripts": {
+    "tw:build":  "tailwindcss --input ./styles/global.css --output ./public/styles/app.css",
     "tw:watch": "tailwindcss --input ./styles/global.css --output ./public/styles/app.css --watch"
+  },
+  "engines": {
+    "node": ">= 18"
   },
   "devDependencies": {
     "tailwindcss": "^3.3.5"
