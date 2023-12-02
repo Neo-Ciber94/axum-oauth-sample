@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use uuid::Uuid;
 
 #[derive(Debug, serde::Serialize)]
@@ -13,6 +13,6 @@ pub struct User {
 pub struct UserSession {
     pub id: Uuid,
     pub user_id: Uuid,
-    pub created_at: DateTime<Utc>,
-    pub expires_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
+    pub expires_at: NaiveDateTime,
 }

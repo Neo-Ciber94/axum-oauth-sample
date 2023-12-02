@@ -85,7 +85,7 @@ pub async fn create_user_session(
     session_duration: Duration,
 ) -> Result<UserSession, anyhow::Error> {
     let session_id = Uuid::new_v4();
-    let created_at = chrono::offset::Utc::now();
+    let created_at = chrono::offset::Utc::now().naive_utc();
     let expires_at = created_at + session_duration;
 
     sqlx::query!(
@@ -138,7 +138,7 @@ pub async fn delete_expired_user_sessions(
     pool: &SqlitePool,
     user_id: Uuid,
 ) -> Result<usize, anyhow::Error> {
-    let now = chrono::offset::Utc::now();
+    let now = chrono::offset::Utc::now().naive_utc();
     let result = sqlx::query!(
         r#"
             DELETE FROM user_session 
