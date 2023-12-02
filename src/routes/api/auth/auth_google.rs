@@ -37,7 +37,7 @@ pub fn google_auth_router() -> Router {
         .route("/google/callback", get(callback))
 }
 
-fn get_auth_client() -> BasicClient {
+fn get_oauth_client() -> BasicClient {
     let client_id = ClientId::new(
         std::env::var("GOOGLE_CLIENT_ID")
             .expect("Missing the GOOGLE_CLIENT_ID environment variable."),
@@ -62,7 +62,7 @@ fn get_auth_client() -> BasicClient {
 }
 
 async fn login() -> impl IntoResponse {
-    let client = get_auth_client();
+    let client = get_oauth_client();
     let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
 
     let (authorize_url, csrf_state) = client
@@ -122,7 +122,7 @@ async fn callback(
         return Ok(StatusCode::BAD_REQUEST.into_response());
     }
 
-    let client = get_auth_client();
+    let client = get_oauth_client();
     let code = AuthorizationCode::new(code);
     let pkce_code_verifier = PkceCodeVerifier::new(code_verifier.value().to_owned());
 
