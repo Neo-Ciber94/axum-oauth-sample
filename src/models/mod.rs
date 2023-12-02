@@ -9,7 +9,7 @@ pub struct User {
     pub image_url: Option<String>,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct UserSession {
     pub id: Uuid,
     pub user_id: Uuid,
