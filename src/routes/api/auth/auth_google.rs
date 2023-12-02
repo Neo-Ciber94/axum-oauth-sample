@@ -22,6 +22,7 @@ use crate::{
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use sqlx::SqlitePool;
 
+//  Checkout available fields on: https://googleapis.dev/ruby/google-api-client/latest/Google/Apis/Oauth2V2/Userinfo.html
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 struct GoogleUser {
     sub: String,
