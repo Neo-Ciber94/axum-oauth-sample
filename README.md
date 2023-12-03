@@ -15,6 +15,11 @@ And have oauth authentication for these providers:
 - Github
 - Discord
 
+## Missing features
+
+- Refresh tokens
+- Token revocation
+
 ## Authentication workflow
 
 ### Login
@@ -42,8 +47,3 @@ graph TD
   N -->|"3. Remove session cookie"| O[Remove Session Cookie]
   O -->|"4. Redirect to /"| P[Redirect to Home]
 ```
-
-## Missing features
-
-- Refresh tokens
-- Token revocation
