@@ -1,0 +1,9 @@
+.vscode
+data
+target
+node_modules
+pnpm-json.yaml
+
+# Environment
+.env
+.env.*
