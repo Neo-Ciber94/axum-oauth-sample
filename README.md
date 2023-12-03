@@ -36,6 +36,7 @@ graph TD
 ### Logout
 
 ```mermaid
+graph TD
   L[Logout] -->|"1. Request /api/auth/logout"| M[Check session cookie]
   M -->|"2. Delete user session"| N[Database - Delete User Session]
   N -->|"3. Remove session cookie"| O[Remove Session Cookie]
