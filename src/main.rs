@@ -39,9 +39,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let host = std::env::var("HOST").context("'HOST' no found")?;
     let port = std::env::var("PORT")
         .context("'PORT' no found")
-        .and_then(|x| match x.parse::<u16>() {
-            Ok(port) => Ok(port),
-            Err(_) => Err(anyhow::anyhow!("Invalid port: {x}")),
+        .and_then(|x| {
+            x.parse::<u16>()
+                .map_err(|_| anyhow::anyhow!("Invalid port: {x}"))
         })?;
 
     let listener = tokio::net::TcpListener::bind((host.as_str(), port))
