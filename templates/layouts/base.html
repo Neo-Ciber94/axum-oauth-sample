@@ -9,14 +9,17 @@
   <title>{%block title %}Axum OAuth{% endblock %}</title>
 </head>
 
-<body class="dark:bg-neutral-900 dark:text-white bg-white text-black h-[100svh] overflow-hidden">
+<body class="dark:bg-neutral-900 dark:text-white bg-white text-black h-[100svh] flex flex-col">
   <!-- Header -->
   {% include "layouts/header.html" %}
 
   <!-- Content -->
-  <main class="p-4 container mx-auto h-full pt-10">
+  <main class="p-4 container mx-auto h-full pt-10 flex-grow">
     {% block content %} {% endblock %}
   </main>
+
+  <!-- Footer -->
+  {% include "layouts/footer.html" %}
 </body>
 
 </html>
