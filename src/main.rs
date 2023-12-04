@@ -29,9 +29,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Routes
     let app = Router::new()
+        .merge(public_dir())
         .merge(crate::routes::api_router())
         .merge(crate::routes::pages_router())
-        .merge(public_dir())
         .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
 
