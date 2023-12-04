@@ -20,6 +20,20 @@ And have oauth authentication for these providers:
 - Refresh tokens
 - Token revocation
 
+## Docker
+
+Build the image:
+
+```bash
+docker build . -t axum-oauth
+```
+
+```bash
+docker run -dp 5000:5000 -e HOST="0.0.0.0" -e PORT=5000 -e BASE_URL="http://localhost:5000" --env-file=.env.docker axum-oauth
+```
+
+> This require create a `.env.docker` file with similar to `.env.sample`
+
 ## Authentication workflow
 
 ### Login
