@@ -21,11 +21,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_max_level(Level::DEBUG)
         .init();
 
+    // Database
     let connection_string = std::env::var("DATABASE_URL").context("'DATABASE_URL' no found")?;
     let pool = SqlitePool::connect(&connection_string)
         .await
         .context("Failed to connect to database")?;
 
+    // Routes
     let app = Router::new()
         .merge(crate::routes::api_router())
         .merge(crate::routes::pages_router())
@@ -33,7 +35,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
 
-    let (host, port) = get_host_and_port()?;
+    // Start server
+    let host = std::env::var("HOST").context("'HOST' no found")?;
+    let port = std::env::var("PORT")
+        .context("'PORT' no found")
+        .and_then(|x| match x.parse::<u16>() {
+            Ok(port) => Ok(port),
+            Err(_) => Err(anyhow::anyhow!("Invalid port: {x}")),
+        })?;
+
     let listener = tokio::net::TcpListener::bind((host.as_str(), port))
         .await
         .context("Failed to start tcp listener")?;
@@ -44,18 +54,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .context("Failed to start server")?;
 
     Ok(())
-}
-
-fn get_host_and_port() -> Result<(String, u16), Box<dyn Error>> {
-    let host = std::env::var("HOST").context("'HOST' no found")?;
-    let port = std::env::var("PORT")
-        .context("'PORT' no found")
-        .and_then(|x| match x.parse::<u16>() {
-            Ok(port) => Ok(port),
-            Err(_) => Err(anyhow::anyhow!("Invalid port: {x}")),
-        })?;
-
-    Ok((host, port))
 }
 
 fn public_dir() -> Router {
