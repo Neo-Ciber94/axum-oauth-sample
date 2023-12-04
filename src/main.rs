@@ -6,7 +6,7 @@ mod routes;
 mod server;
 
 use anyhow::Context;
-use axum::{Extension, Router};
+use axum::{middleware, Extension, Router};
 use dotenvy::dotenv;
 use sqlx::sqlite::SqlitePool;
 use std::error::Error;
@@ -33,7 +33,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .merge(crate::routes::api_router())
         .merge(crate::routes::pages_router())
         .layer(Extension(pool))
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .layer(middleware::from_fn(crate::routes::error_handler_middleware));
 
     // Start server
     let host = std::env::var("HOST").context("'HOST' no found")?;

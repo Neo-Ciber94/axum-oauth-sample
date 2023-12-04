@@ -15,7 +15,6 @@ pub fn pages_router() -> Router {
         .route("/", get(home))
         .route("/login", get(login))
         .layer(middleware::from_fn(auth_middleware))
-        .layer(middleware::from_fn(handle_error_middleware))
         .fallback(not_found)
 }
 
@@ -67,7 +66,7 @@ async fn not_found(UserTheme(theme): UserTheme) -> ErrorTemplate {
     }
 }
 
-async fn handle_error_middleware(
+pub async fn error_handler_middleware(
     UserTheme(theme): UserTheme,
     request: Request,
     next: Next,
