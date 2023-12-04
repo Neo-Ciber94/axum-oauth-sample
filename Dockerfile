@@ -40,7 +40,9 @@ RUN export DATABASE_URL="sqlite:./data/data.db" && cargo build --release
 
 # Create a new image
 FROM ubuntu:24.04 as runner
-RUN apt-get update && apt-get install openssl -y
+RUN apt-get update && \
+    apt-get install openssl -y && \
+    apt-get install -y ca-certificates
 
 # Set the working directory in the container
 WORKDIR /app
