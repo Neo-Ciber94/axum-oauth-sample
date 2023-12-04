@@ -2,6 +2,10 @@
 
 An axum example of authentication using oauth.
 
+<video width="640" height="360" controls>
+  <source src="./github/preview.mp4">
+</video>
+
 This example uses:
 
 - Axum

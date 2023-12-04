@@ -3,6 +3,7 @@ data
 target
 node_modules
 pnpm-json.yaml
+github
 
 # Environment
 .env
