@@ -13,12 +13,9 @@ use cookie::Cookie;
 use crate::{constants::COOKIE_THEME, misc::Theme, server::UserTheme};
 
 pub fn api_router() -> Router {
-    Router::new().nest(
-        "/api",
-        Router::new()
-            .merge(auth::auth_router())
-            .route("/toggle_theme", post(toggle_theme)),
-    )
+    Router::new()
+        .merge(auth::auth_router())
+        .route("/api/toggle_theme", post(toggle_theme))
 }
 
 async fn toggle_theme(UserTheme(theme): UserTheme, headers: HeaderMap) -> impl IntoResponse {

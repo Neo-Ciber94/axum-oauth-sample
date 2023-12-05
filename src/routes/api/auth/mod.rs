@@ -19,15 +19,11 @@ mod auth_google;
 
 pub fn auth_router() -> Router {
     Router::new()
-        .nest(
-            "/auth",
-            Router::new()
-                .merge(google_auth_router())
-                .merge(github_auth_router())
-                .merge(discord_auth_router()),
-        )
-        .route("/auth/me", get(me))
-        .route("/auth/logout", get(logout))
+        .route("/api/auth/me", get(me))
+        .route("/api/auth/logout", get(logout))
+        .merge(google_auth_router())
+        .merge(github_auth_router())
+        .merge(discord_auth_router())
 }
 
 pub async fn me(

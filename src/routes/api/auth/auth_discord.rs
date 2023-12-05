@@ -37,8 +37,8 @@ struct DiscordUser {
 
 pub fn discord_auth_router() -> Router {
     Router::new()
-        .route("/discord/login", get(login))
-        .route("/discord/callback", get(callback))
+        .route("/api/auth/discord/login", get(login))
+        .route("/api/auth/discord/callback", get(callback))
 }
 
 fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {

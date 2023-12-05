@@ -32,8 +32,8 @@ struct GithubUser {
 
 pub fn github_auth_router() -> Router {
     Router::new()
-        .route("/github/login", get(login))
-        .route("/github/callback", get(callback))
+        .route("/api/auth/github/login", get(login))
+        .route("/api/auth/github/callback", get(callback))
 }
 
 fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {

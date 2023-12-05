@@ -35,8 +35,8 @@ struct GoogleUser {
 
 pub fn google_auth_router() -> Router {
     Router::new()
-        .route("/google/login", get(login))
-        .route("/google/callback", get(callback))
+        .route("/api/auth/google/login", get(login))
+        .route("/api/auth/google/callback", get(callback))
 }
 
 fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
