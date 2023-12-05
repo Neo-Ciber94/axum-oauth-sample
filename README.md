@@ -4,6 +4,8 @@ An axum example of authentication using oauth.
 
 <https://github.com/Neo-Ciber94/axum-oauth-sample/assets/7119315/340580d2-c221-4f09-82f0-f343b50d4b96>
 
+> Preview: <https://axum-oauth-sample.fly.dev/> (This only allows Google auth)
+
 This example uses:
 
 - Axum
