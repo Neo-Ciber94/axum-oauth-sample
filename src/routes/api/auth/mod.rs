@@ -37,9 +37,7 @@ pub async fn me(
     let session_cookie = cookies.get(COOKIE_AUTH_SESSION);
 
     let Some(session_cookie) = session_cookie else {
-        return Err(ErrorResponse::from(
-            StatusCode::UNAUTHORIZED.into_response(),
-        ));
+        return Err(ErrorResponse::from(StatusCode::UNAUTHORIZED));
     };
 
     let user = crate::db::get_user_by_session_id(&pool, session_cookie.value())
@@ -48,7 +46,7 @@ pub async fn me(
 
     match user {
         Some(user) => Ok(Json(user).into_response()),
-        None => Err(ErrorResponse::from(StatusCode::NOT_FOUND.into_response())),
+        None => Err(ErrorResponse::from(StatusCode::NOT_FOUND)),
     }
 }
 
@@ -59,9 +57,7 @@ pub async fn logout(
     let session_cookie = cookies.get(COOKIE_AUTH_SESSION);
 
     let Some(session_cookie) = session_cookie else {
-        return Err(ErrorResponse::from(
-            StatusCode::UNAUTHORIZED.into_response(),
-        ));
+        return Err(ErrorResponse::from(StatusCode::UNAUTHORIZED));
     };
 
     crate::db::delete_user_session(&pool, session_cookie.value())

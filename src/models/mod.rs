@@ -24,13 +24,12 @@ struct UnknownProvider {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
-
 pub enum AuthProvider {
     Google,
     Github,
     Discord,
 
-    // This varian should not be constructed
+    // This variant should not be constructed
     #[allow(private_interfaces)]
     Unknown(UnknownProvider),
 }
