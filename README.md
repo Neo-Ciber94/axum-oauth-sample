@@ -30,6 +30,7 @@ And have oauth authentication for these providers:
 
 - [node >= 18](https://nodejs.org/en)
 - [sqlx-cli](https://crates.io/crates/sqlx-cli)
+- [pnpm (optional)](https://pnpm.io/installation)
 
 1. Install dependencies
 
